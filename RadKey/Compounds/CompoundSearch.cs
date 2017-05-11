@@ -66,6 +66,8 @@ namespace RadKey.Compounds
         {
             List<Compound> matchingWords = new List<Compound>();
 
+            bool isHiraganaOnly = HiraganaOnlySearch(matchText);
+
             foreach (Compound word in lastMatchingWordSet)
             {
                 // Case 0: Throw out words shorter than the input string. 
@@ -81,7 +83,7 @@ namespace RadKey.Compounds
                     {
                         bool wordMatches = true;
                         // Case 2a: String only contains hiragana. 
-                        if (IsHiraganaOnly(matchText))
+                        if (isHiraganaOnly)
                         {
                             wordMatches = wordMatches && HasReadingContaining(matchText, word.Readings());
                         }
@@ -135,7 +137,7 @@ namespace RadKey.Compounds
             }
 
             // Case 2: Only unbracketed hiragana were sent. Search for words by reading.
-            if (IsHiraganaOnly(searchInput))
+            if (HiraganaOnlySearch(searchInput))
             {
                 matchingWordList = BuildWordListByReading(searchInput);
             }
@@ -148,13 +150,13 @@ namespace RadKey.Compounds
                 int wordPos = 0; // NOTE: The position of a character in a given compound can be different from the position in the search string in cases where the text is bracketed.
                 int closingBracketPos = 0;
 
-                for (int searchPos = 0; 
-                    searchPos < searchInput.Length; 
+                for (int searchPos = 0;
+                    searchPos < searchInput.Length;
                     searchPos++)
                 {
                     // 1. If the search text is in a bracket, all text within that bracket should be considered as maching a single character in a potentially matching word.
                     if (searchInput[searchPos] == '[')
-                    {                        
+                    {
                         if (searchPos + 1 != searchInput.Length) // Checks that the string doesn't end in a opening bracket.
                         {
                             closingBracketPos = FindClosingBracket(searchInput, searchPos);
@@ -173,6 +175,12 @@ namespace RadKey.Compounds
 
 
             return matchingWordList;
+        }
+
+        private static bool HiraganaOnlySearch(string searchInput)
+        {
+            return new Regex("[\\p{IsHiragana}]").IsMatch(searchInput) &&
+                            !new Regex("[\\p{IsCJKUnifiedIdeographs}\\p{IsKatakana}\\p{IsBasicLatin}]").IsMatch(searchInput);
         }
 
         private static string CharacterAt(string searchInput, int searchPos)
@@ -198,10 +206,5 @@ namespace RadKey.Compounds
             return closingBracketPosition;
         }
 
-        private static bool IsHiraganaOnly(string input)
-        {
-            return new Regex("[\\p{IsHiragana}]").IsMatch(input) &&
-                            !new Regex("[\\p{IsCJKUnifiedIdeographs}\\p{IsKatakana}\\p{IsBasicLatin}]").IsMatch(input);
-        }
     }
 }
