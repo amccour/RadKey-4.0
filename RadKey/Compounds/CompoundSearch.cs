@@ -88,10 +88,10 @@ namespace RadKey.Compounds
                         // Case 2b: Assume it's radicals (if it's a mix of radicals, kanji, and kana, the match'll fail safely).
                         else
                         {
-                            foreach (char rad in matchText)
+                            foreach (char radical in matchText)
                             {
                                 // Checking the kanjiToRad dictionary is needed to stop the system from trying to look up a kana or symbol.
-                                wordMatches = wordMatches && _kanjiToRadicalDictionary.Lookup(word.ToString()[posInWord].ToString()).Contains(rad);
+                                wordMatches = wordMatches && KanjiContainsRadical(word.CharacterAt(posInWord), radical.ToString());
                                 // Word is not a kanji at this position. Does not match.
                             }
                         }
@@ -109,7 +109,7 @@ namespace RadKey.Compounds
 
                     // Case 4: character is a loose radical. See if word[pos] contains that radical.
                     // Checking the kanjiToRad dictionary is needed to stop the system from trying to look up a kana or symbol.
-                    else if (_kanjiToRadicalDictionary.Lookup(word.ToString()[posInWord].ToString()).Contains(matchText))
+                    else if (KanjiContainsRadical(word.CharacterAt(posInWord), matchText))
                     {
                         matchingWords.Add(word);
                     }
@@ -119,22 +119,30 @@ namespace RadKey.Compounds
             return matchingWords;
         }
 
+        private bool KanjiContainsRadical(char kanji, string radical)
+        {
+            return _kanjiToRadicalDictionary.Lookup(kanji.ToString()).Contains(radical);
+        }
+
         public List<Compound> Search(string searchInput)
         {
             List<Compound> matchingWordList = new List<Compound>();
 
+            // Case 1: A blank search string was sent. Return an empty match set.
             if (searchInput == "")
             {
                 return new List<Compound> { };
             }
-            // Special case for searching by reading.
+
+            // Case 2: Only unbracketed hiragana were sent. Search for words by reading.
             if (IsHiraganaOnly(searchInput))
             {
                 matchingWordList = BuildWordListByReading(searchInput);
             }
+
+            // Case 3: Regular search based on radicals + hiragana.
             else
             {
-                // Standard multi-radical/multi-kanji wordlist generation
                 matchingWordList = _compoundDictionary.Lookup();
 
                 int wordPos = 0; // NOTE: The position of a character in a given compound can be different from the position in the search string in cases where the text is bracketed.
@@ -144,22 +152,20 @@ namespace RadKey.Compounds
                     searchPos < searchInput.Length; 
                     searchPos++)
                 {
-                    // Bracketed text found. Get a substring.
+                    // 1. If the search text is in a bracket, all text within that bracket should be considered as maching a single character in a potentially matching word.
                     if (searchInput[searchPos] == '[')
-                    {
-                        // Check that the string doesn't end in a opening bracket.
-                        if (searchPos + 1 != searchInput.Length)
+                    {                        
+                        if (searchPos + 1 != searchInput.Length) // Checks that the string doesn't end in a opening bracket.
                         {
                             closingBracketPos = FindClosingBracket(searchInput, searchPos);
-
-                            matchingWordList = BuildMatchingWordList(searchInput.Substring(searchPos + 1, closingBracketPos - (searchPos + 1)), matchingWordList, wordPos, true);
+                            matchingWordList = BuildMatchingWordList(BracketedTextAt(searchInput, searchPos, closingBracketPos), matchingWordList, wordPos, true);
                             searchPos = closingBracketPos;
                             wordPos++;
                         }
                     }
                     else
                     {
-                        matchingWordList = BuildMatchingWordList(searchInput[searchPos].ToString(), matchingWordList, wordPos, false);
+                        matchingWordList = BuildMatchingWordList(CharacterAt(searchInput, searchPos), matchingWordList, wordPos, false);
                         wordPos++;
                     }
                 }
@@ -167,6 +173,16 @@ namespace RadKey.Compounds
 
 
             return matchingWordList;
+        }
+
+        private static string CharacterAt(string searchInput, int searchPos)
+        {
+            return searchInput[searchPos].ToString();
+        }
+
+        private static string BracketedTextAt(string searchInput, int openingBracketPos, int closingBracketPos)
+        {
+            return searchInput.Substring(openingBracketPos + 1, closingBracketPos - (openingBracketPos + 1));
         }
 
         private static int FindClosingBracket(string searchInput, int startPos)

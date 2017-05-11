@@ -33,6 +33,18 @@ namespace RadKey.Compounds
             return _keb;
         }
 
+        public char CharacterAt(int pos)
+        {
+            if(pos < _keb.Length)
+            { 
+                return _keb[pos];
+            }
+            else
+            {
+                throw new IndexOutOfRangeException();
+            }
+        }
+
         public List<string> definition()
         {
             return _gloss;
