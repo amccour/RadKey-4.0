@@ -66,15 +66,18 @@ namespace RadKey.Compounds
         {
             List<Compound> matchingWords = new List<Compound>();
 
+            // *** WARNING ***
+            // Do not do this check in the foreach loop. It kills performance.
+            // *** WARNING ***
             bool isHiraganaOnly = HiraganaOnlySearch(matchText);
 
             foreach (Compound word in lastMatchingWordSet)
             {
                 // Case 0: Throw out words shorter than the input string. 
-                if (word.ToString().Length >= posInWord + 1)
+                if (word.Length >= posInWord + 1)
                 {
                     // Case 1: See if the search string matches the word outright.
-                    if (word.ToString()[posInWord].ToString() == matchText)
+                    if (word.CharacterAt(posInWord).ToString() == matchText)
                     {
                         matchingWords.Add(word);
                     }
@@ -147,28 +150,28 @@ namespace RadKey.Compounds
             {
                 matchingWordList = _compoundDictionary.Lookup();
 
-                int wordPos = 0; // NOTE: The position of a character in a given compound can be different from the position in the search string in cases where the text is bracketed.
+                int posInWord = 0; // NOTE: The position of a character in a given compound can be different from the position in the search string in cases where the text is bracketed.
                 int closingBracketPos = 0;
 
-                for (int searchPos = 0;
-                    searchPos < searchInput.Length;
-                    searchPos++)
+                for (int posInSearch = 0;
+                    posInSearch < searchInput.Length;
+                    posInSearch++)
                 {
                     // 1. If the search text is in a bracket, all text within that bracket should be considered as maching a single character in a potentially matching word.
-                    if (searchInput[searchPos] == '[')
+                    if (searchInput[posInSearch] == '[')
                     {
-                        if (searchPos + 1 != searchInput.Length) // Checks that the string doesn't end in a opening bracket.
+                        if (posInSearch + 1 != searchInput.Length) // Checks that the string doesn't end in a opening bracket.
                         {
-                            closingBracketPos = FindClosingBracket(searchInput, searchPos);
-                            matchingWordList = BuildMatchingWordList(BracketedTextAt(searchInput, searchPos, closingBracketPos), matchingWordList, wordPos, true);
-                            searchPos = closingBracketPos;
-                            wordPos++;
+                            closingBracketPos = FindClosingBracket(searchInput, posInSearch);
+                            matchingWordList = BuildMatchingWordList(BracketedTextAt(searchInput, posInSearch, closingBracketPos), matchingWordList, posInWord, true);
+                            posInSearch = closingBracketPos;
+                            posInWord++;
                         }
                     }
                     else
                     {
-                        matchingWordList = BuildMatchingWordList(CharacterAt(searchInput, searchPos), matchingWordList, wordPos, false);
-                        wordPos++;
+                        matchingWordList = BuildMatchingWordList(CharacterAt(searchInput, posInSearch), matchingWordList, posInWord, false);
+                        posInWord++;
                     }
                 }
             }

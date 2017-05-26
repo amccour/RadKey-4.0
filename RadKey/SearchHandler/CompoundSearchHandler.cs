@@ -32,7 +32,8 @@ namespace RadKey.SearchHandler
                 else if(matchResults[x].ToString() == searchString)
                 {
                     matchResults.Insert(0, matchResults[x]);
-                    matchResults.RemoveAt(x+1);
+                    x++;
+                    matchResults.RemoveAt(x);
                     exactMatchCount++;
                 }
             }

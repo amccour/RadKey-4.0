@@ -33,6 +33,14 @@ namespace RadKey.Compounds
             return _keb;
         }
 
+        public int Length
+        {
+            get
+            {
+                return _keb.Length;
+            }
+        }
+
         public char CharacterAt(int pos)
         {
             if(pos < _keb.Length)
