@@ -133,6 +133,10 @@ namespace RadKey.SearchHandler
                     SelectionInfoHandler.ShowKanjiSelectionInfo(resultOutput.Text, outputMessage, outputReading, outputMeaning);
                     return;
                 }
+                else
+                {
+                    return;
+                }
             }
 
             int strokes = -1;
